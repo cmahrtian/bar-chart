@@ -34,6 +34,30 @@
   .vertical rect {
     text-anchor: middle;
   }
+
+  /*adding axes (vertical bar charts)*/
+  .bar {
+    fill: steelblue;
+  }
+
+  .bar:hover {
+    fill: brown;
+  }
+
+  .axis text {
+    font: 10px sans-serif;
+  }
+
+  .axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .x.axis path {
+    display: none;
+  }
+
 </style>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 
@@ -194,40 +218,138 @@
   <svg class="vertical"></svg>
   <script>
     // Rotating Into Columns
-    var width = 960;
-        height = 500;
+    // var width = 960;
+    //     height = 500;
+
+    // var y = d3.scale.linear()
+    //       .range([height, 0]);
+
+    // var vertical = d3.select(".vertical")
+    //               .attr("width", width)
+    //               .attr("height", height + 11);
+    
+    // d3.csv("data.csv", type, function(error, data) {
+    //   y.domain([0, d3.max(data, function(d) {
+    //     return d.value;
+    //   })]);
+
+    //   var barWidth = width / data.length;
+
+    //   var bar = vertical.selectAll("g")
+    //                   .data(data)
+    //                   .enter().append("g")
+    //                   .attr("transform", function(d, i) {
+    //                     return "translate(" + i * barWidth + ",0)";
+    //                   });
+
+    //   bar.append("rect")
+    //       .attr("y", function(d) { return y(d.value); })
+    //       .attr("height", function(d) { return height - y(d.value); })
+    //       .attr("width", barWidth - 1);
+
+    //   bar.append("text")
+    //       .attr("x", barWidth / 2)
+    //       .attr("y", function(d) { return y(d.value) + 3; })
+    //       .attr("dy", ".75em")
+    //       .text(function(d) { return d.value; });
+
+    //   bar.append("text")
+    //       .attr("x", (barWidth/2) - 15)
+    //       .attr("y", function(d) { return height + 2; })
+    //       .attr("dy", ".75em")
+    //       .style('fill', 'steelblue')
+    //       .text(function(d) { return d.name; });
+    // });
+
+    // function type(d) {
+    //   d.value = +d.value; // coerce to number
+    //   return d;
+    // }
+
+    // Encoding Ordinal Data
+    // var width = 960
+    //     height = 500;
+
+    // var ordinalX = d3.scale.ordinal()
+    //           .rangeRoundBands([0, width], .1);
+
+    // var y = d3.scale.linear()
+    //           .range([height, 0]);
+
+    // var vertical = d3.select(".vertical")
+    //                   .attr("width", width)
+    //                   .attr("height", height);
+
+    // d3.csv("data.csv", type, function(error, data) {
+    //   ordinalX.domain(data.map(function(d) { return d.name; }));
+    //   y.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+    //   var bar = vertical.selectAll("g")
+    //                 .data(data)
+    //                 .enter().append("g")
+    //                 .attr("transform", function(d) { 
+    //                   return "translate(" + ordinalX(d.name) + ",0)"; 
+    //                 });
+
+    //   bar.append("rect")
+    //       .attr("y", function(d) { return y(d.value); })
+    //       .attr("height", function(d) { return height - y(d.value); })
+    //       .attr("width", ordinalX.rangeBand());
+    // });
+
+    // Ordinal Data + Margins + Axes
+    var margin = {top: 20, right: 30, bottom: 30, left: 40},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var ordinalX = d3.scale.ordinal()
+                    .rangeRoundBands([0, width], .1);
 
     var y = d3.scale.linear()
-          .range([height, 0]);
+              .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+                  .scale(ordinalX)
+                  .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+                  .scale(y)
+                  .orient("left");
 
     var vertical = d3.select(".vertical")
-                  .attr("width", width)
-                  .attr("height", height);
-    
-    d3.csv("data.csv", type, function(error, data) {
-      y.domain([0, d3.max(data, function(d) {
-        return d.value;
-      })]);
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      var barWidth = width / data.length;
+    d3.csv("alphabet.csv", type, function(error, data) {
+      ordinalX.domain(data.map(function(d) { return d.letter; }));
+      y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
 
-      var bar = vertical.selectAll("g")
-                      .data(data)
-                      .enter().append("g")
-                      .attr("transform", function(d, i) {
-                        return "translate(" + i * barWidth + ",0)";
-                      });
+      vertical.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
 
-      bar.append("rect")
-          .attr("y", function(d) { return y(d.value); })
-          .attr("height", function(d) { return height - y(d.value); })
-          .attr("width", barWidth - 1);
+      vertical.selectAll(".bar")
+          .data(data)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return ordinalX(d.letter); })
+          .attr("y", function(d) { return y(d.frequency); })
+          .attr("height", function(d) { return height - y(d.frequency); })
+          .attr("width", ordinalX.rangeBand());
 
-      bar.append("text")
-          .attr("x", barWidth / 2)
-          .attr("y", function(d) { return y(d.value) + 3; })
-          .attr("dy", ".75em")
-          .text(function(d) { return d.value; });
+      vertical.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .style("fill", "steelblue")
+          .text("Frequency");
     });
 
     function type(d) {
